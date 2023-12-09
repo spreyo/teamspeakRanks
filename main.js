@@ -1,6 +1,6 @@
 var express = require('express');
 var app = express();
-const fs = require('fs')
+const fs = require('fs/promises')
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const e = require('express');
@@ -38,6 +38,8 @@ app.get('/', (req, res, next) => {
 app.post("/connectionTime", async (req, res, next) => {
     const conn = await pool.getConnection()
     const users = await teamspeak.clientList()
+    let leaderboard = [];
+    let done = false;
     users.forEach(async user => {
         if (user.type == 1) {
             return
@@ -46,13 +48,12 @@ app.post("/connectionTime", async (req, res, next) => {
         const exists = await conn.query(`SELECT name, \`time\`
         FROM s22477_ranks.ranks
         WHERE name = "${user.uniqueIdentifier}";`)
-        console.log(exists)
         if (exists.length > 0) {
             let time = await conn.query(`SELECT time
             FROM s22477_ranks.ranks
             WHERE name='${user.uniqueIdentifier}'`)
             time = time[0]["time"]
-            console.log(time)
+
 
 
             await conn.query(`UPDATE s22477_ranks.ranks
@@ -80,18 +81,31 @@ app.post("/connectionTime", async (req, res, next) => {
                     break
 
             }
-            console.log(sgid);
+
+            leaderboard.push({ username: user.nickname, minutes: time });
+            leaderboard = leaderboard.sort((a, b) => {
+                return b.minutes - a.minutes
+            });
+            console.log(leaderboard);
+
+            let message = ``;
+            leaderboard.forEach((user) => {
+                let hours = Math.floor(user.minutes / 60);
+                message += `\n ${user.username} : ${Number.isInteger(user.minutes / 60) ? hours : `${hours == 0 ? "" : `${hours}h`} ${user.minutes - hours * 60}m`}`
+            })
+            fs.writeFile("leaderboard.txt", message, err => { if (err) { console.log(err) } });
+
             if (!user.servergroups.includes(sgid.toString())) {
                 groups.forEach(async group => {
                     try {
 
                         await user.delGroups(group);
                     } catch (e) {
-                        console.log("group does not exist");
                     }
                 })
-                await user.addGroups(sgid);
+                // await user.addGroups(sgid);
 
+                done = true;
             }
 
 
@@ -102,12 +116,22 @@ app.post("/connectionTime", async (req, res, next) => {
             await conn.query(`INSERT INTO s22477_ranks.ranks
             (name, time)
             VALUES('${user.uniqueIdentifier}', 1);`)
+            done = true;
         }
     })
-    // await conn.destroy();
+    if (done) {
+        await conn.destroy();
+
+    }
 
     res.send(200);
 
+})
+
+app.get("/leaderboard", async (req, res, next) => {
+    let leaderboard = await fs.readFile("leaderboard.txt", "utf8")
+    console.log(leaderboard)
+    res.send(200, leaderboard);
 })
 
 app.listen(3001, () => {
