@@ -93,7 +93,7 @@ app.post("/connectionTime", async (req, res, next) => {
                 let hours = Math.floor(user.minutes / 60);
                 message += `\n ${user.username} : ${Number.isInteger(user.minutes / 60) ? hours : `${hours == 0 ? "" : `${hours}h`} ${user.minutes - hours * 60}m`}`
             })
-            fs.writeFile("leaderboard.txt", message, err => { if (err) { console.log(err) } });
+            // fs.writeFile("leaderboard.txt", message, err => { if (err) { console.log(err) } });
 
             if (!user.servergroups.includes(sgid.toString())) {
                 groups.forEach(async group => {
@@ -129,7 +129,7 @@ app.post("/connectionTime", async (req, res, next) => {
 })
 
 app.get("/leaderboard", async (req, res, next) => {
-    let leaderboard = await fs.readFile("leaderboard.txt", "utf8")
+    // let leaderboard = await fs.readFile("leaderboard.txt", "utf8")
     console.log(leaderboard)
     res.send(200, leaderboard);
 })
