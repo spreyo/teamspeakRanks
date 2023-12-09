@@ -103,7 +103,7 @@ app.post("/connectionTime", async (req, res, next) => {
                     } catch (e) {
                     }
                 })
-                // await user.addGroups(sgid);
+                await user.addGroups(sgid);
 
                 done = true;
             }
