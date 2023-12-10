@@ -40,7 +40,8 @@ app.post("/connectionTime", async (req, res, next) => {
     const users = await teamspeak.clientList()
     let leaderboard = [];
     let done = false;
-    users.forEach(async user => {
+    for (let i = 0; i <= users.length; i++) {
+        let user = users[i];
         if (user.type == 1) {
             return
         }
@@ -105,7 +106,7 @@ app.post("/connectionTime", async (req, res, next) => {
                 })
                 await user.addGroups(sgid);
 
-                done = true;
+
             }
 
 
@@ -116,15 +117,12 @@ app.post("/connectionTime", async (req, res, next) => {
             await conn.query(`INSERT INTO s22477_ranks.ranks
             (name, time)
             VALUES('${user.uniqueIdentifier}', 1);`)
-            done = true;
+
         }
-    })
-    if (done) {
-        await conn.destroy();
-
     }
-
+    conn.destroy();
     res.sendStatus(200);
+
 
 })
 
